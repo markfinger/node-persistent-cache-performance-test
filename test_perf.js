@@ -78,25 +78,19 @@ tests.forEach(count => {
       );`, (err) => {
         if (err) return rej(err);
 
-        const writes = [];
+        const sql = [];
+        const params = [];
         for (var i=0; i<count; i++) {
-          (() => {
-            let _i = i;
-            writes.push(new Promise((res, rej) => {
-              db.run(`INSERT INTO CACHE (key, value) VALUES (?, ?);`, [_i, toWrite], (err) => {
-                if (err) return rej(err);
-                res();
-              });
-            }));
-          })();
+          sql.push(`INSERT INTO CACHE (key, value) VALUES ("${i}", '${JSON.stringify(toWrite)}');`);
         }
 
-        Promise.all(writes)
-          .then(() => {
-            const duration = (new Date()).getTime() - start;
-            scores[count].push(duration);
-            res();
-          });
+        db.run(sql.join('\n'), params, (err) => {
+          if (err) return rej(err);
+
+          const duration = (new Date()).getTime() - start;
+          scores[count].push(duration);
+          res();
+        });
       });
     });
   });
